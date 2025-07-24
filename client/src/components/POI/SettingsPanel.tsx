@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Download, FolderSync, Eye, Filter } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Settings, Download, FolderSync, Eye, Filter, LogOut, User } from "lucide-react";
 import JsonPreviewModal from "./JsonPreviewModal";
 import type { Poi } from "@/types/poi";
 
@@ -16,6 +17,17 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
   const [isOpen, setIsOpen] = useState(false);
   const [showJsonPreview, setShowJsonPreview] = useState(false);
   const { toast } = useToast();
+  const { user, logoutMutation } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      // Force page reload to clear all state and redirect to auth
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const handleExportJSON = async () => {
     try {
@@ -203,7 +215,33 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
               </Button>
             </div>
             
+            {/* User Section */}
             <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <User className="w-4 h-4 text-gray-600" />
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900 truncate max-w-[150px]">
+                      {user?.firstName || user?.email || 'User'}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                      {user?.email}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
+                  disabled={logoutMutation.isPending}
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="pt-2 border-t border-gray-200">
               <div className="text-xs text-gray-500 space-y-1">
                 <div className="flex justify-between">
                   <span>Total POIs:</span>

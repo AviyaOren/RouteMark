@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear(); // Clear all cached data
     },
     onError: (error: Error) => {
       toast({
