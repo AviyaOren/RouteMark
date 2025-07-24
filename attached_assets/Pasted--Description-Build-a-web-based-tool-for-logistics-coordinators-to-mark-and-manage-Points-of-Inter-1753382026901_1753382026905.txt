@@ -1,0 +1,93 @@
+🧭 Description:
+Build a web-based tool for logistics coordinators to mark and manage Points of Interest (POIs) relevant to field riders. These POIs include essential locations such as restrooms, water fountains, food stops, and rest areas. The tool allows users to create, edit, and delete POIs on an interactive map, with data stored in JSON format to be consumed later by a mobile rider app. The platform will also include user management features such as login and permission-based access control.
+
+🎯 Key Features:
+
+User Management
+
+Login and authentication (via email/password or OAuth)
+
+Roles & permissions:
+
+Admin: full access to manage users and POIs
+
+Editor: can create/edit/delete POIs
+
+Viewer: read-only access
+
+POI Management Dashboard
+
+Add new POIs with name, type, description, and location (via map click)
+
+Edit or delete existing POIs
+
+View POIs by category or keyword
+
+Map Integration
+
+Interactive map (Leaflet.js or Google Maps)
+
+Drop markers, zoom, and filter by POI category
+
+POI Categories (predefined or editable):
+
+Restrooms
+
+Water fountains
+
+Food stops
+
+Fuel stations
+
+Meeting points
+
+Data Export
+
+POIs stored in JSON format
+
+Option to download or sync to external system
+
+Structured output with coordinates and metadata
+
+📂 Sample Output (JSON Format):
+
+json
+Copy
+Edit
+[
+  {
+    "id": "poi-001",
+    "type": "Restroom",
+    "name": "Public Restroom at Central Park",
+    "description": "Clean restroom next to the main gate",
+    "location": { "lat": 52.5200, "lng": 13.4050 }
+  },
+  {
+    "id": "poi-002",
+    "type": "Water Fountain",
+    "name": "Water Station - Gas Station",
+    "description": "Behind the Shell station",
+    "location": { "lat": 52.5211, "lng": 13.4023 }
+  }
+]
+🛠 Tech Stack:
+
+Frontend: React + Tailwind CSS
+
+Map: Leaflet.js or Google Maps API
+
+Auth & Backend: Firebase Auth + Firestore / Supabase
+
+State & Storage: Context API or Redux + cloud or local export
+
+📱 UX Notes:
+
+Clean, desktop-friendly UI for logistics team
+
+Login required before accessing POI dashboard
+
+Role-based UI control (e.g. viewers cannot see “Add POI” button)
+
+POI form opens after clicking the map
+
+Export/download JSON file button
