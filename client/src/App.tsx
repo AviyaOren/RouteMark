@@ -22,11 +22,9 @@ function Router() {
 
   return (
     <Switch>
-      {user ? (
-        <Route path="/" component={Dashboard} />
-      ) : (
-        <Route path="/" component={AuthPage} />
-      )}
+      <Route path="/">
+        {user ? <Dashboard /> : <AuthPage />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
