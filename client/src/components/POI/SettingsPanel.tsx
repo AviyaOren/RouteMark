@@ -22,10 +22,12 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
-      // Force page reload to clear all state and redirect to auth
-      window.location.href = "/";
+      // Force complete page reload to clear all client state
+      window.location.reload();
     } catch (error) {
       console.error("Logout error:", error);
+      // Even if logout fails, clear client state and reload
+      window.location.reload();
     }
   };
 

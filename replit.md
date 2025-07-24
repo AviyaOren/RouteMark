@@ -14,6 +14,9 @@ This is a full-screen map-centric POI management system for logistics coordinato
 ✓ **User interface in map overlay**: Added compact user info bar at top of map
 ✓ **Export functionality**: JSON export accessible through settings panel (less prominent as requested)
 ✓ **Fixed TypeScript errors**: Resolved all server and client-side type issues
+✓ **Authentication system**: Replaced Replit auth with custom email/password authentication
+✓ **Database conversion**: Updated user IDs from strings to auto-incrementing integers
+✓ **Logout functionality**: Fixed session clearing and proper redirect to login page
 
 ## User Preferences
 

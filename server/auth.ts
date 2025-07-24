@@ -102,12 +102,19 @@ export function setupAuth(app: Express) {
     res.status(200).json({ ...req.user, password: undefined });
   });
 
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
+  const handleLogout = (req: any, res: any, next: any) => {
+    req.logout((err: any) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      req.session.destroy((err: any) => {
+        if (err) return next(err);
+        res.clearCookie('connect.sid');
+        res.sendStatus(200);
+      });
     });
-  });
+  };
+
+  app.post("/api/logout", handleLogout);
+  app.get("/api/logout", handleLogout);
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
