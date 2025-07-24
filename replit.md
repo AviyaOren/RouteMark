@@ -2,7 +2,18 @@
 
 ## Overview
 
-This is a web-based tool for logistics coordinators to mark and manage Points of Interest (POIs) relevant to field riders. The application allows users to create, edit, and manage POIs such as restrooms, water fountains, food stops, fuel stations, and meeting points on an interactive map interface.
+This is a full-screen map-centric POI management system for logistics coordinators to mark and manage Points of Interest (POIs) relevant to field riders. The application features a full-screen Leaflet map with floating UI controls, role-based authentication, and comprehensive POI management functionality. Users can create, edit, and manage POIs such as restrooms, water fountains, food stops, fuel stations, and meeting points directly on the interactive map interface.
+
+## Recent Changes (January 2025)
+
+✓ **Full-screen map redesign**: Removed top navigation header, made map fill entire screen
+✓ **Consolidated UI controls**: Moved all user actions into floating settings panel
+✓ **Enhanced add POI workflow**: Large prominent floating button for adding new POIs
+✓ **Integrated filtering**: POI category filtering moved into settings panel with visual indicators
+✓ **Improved map loading**: Fixed Leaflet dynamic loading and initialization issues
+✓ **User interface in map overlay**: Added compact user info bar at top of map
+✓ **Export functionality**: JSON export accessible through settings panel (less prominent as requested)
+✓ **Fixed TypeScript errors**: Resolved all server and client-side type issues
 
 ## User Preferences
 

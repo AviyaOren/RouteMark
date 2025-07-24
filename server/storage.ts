@@ -75,8 +75,8 @@ export class DatabaseStorage implements IStorage {
     if (!existingPoi) return undefined;
 
     const user = await this.getUser(userId);
-    if (!user || (user.role === "Viewer") || 
-        (user.role === "Editor" && existingPoi.createdBy !== userId && user.role !== "Admin")) {
+    if (!user || user.role === "Viewer" || 
+        (user.role === "Editor" && existingPoi.createdBy !== userId)) {
       throw new Error("Insufficient permissions to edit this POI");
     }
 
@@ -98,13 +98,13 @@ export class DatabaseStorage implements IStorage {
     if (!existingPoi) return false;
 
     const user = await this.getUser(userId);
-    if (!user || (user.role === "Viewer") || 
-        (user.role === "Editor" && existingPoi.createdBy !== userId && user.role !== "Admin")) {
+    if (!user || user.role === "Viewer" || 
+        (user.role === "Editor" && existingPoi.createdBy !== userId)) {
       throw new Error("Insufficient permissions to delete this POI");
     }
 
     const result = await db.delete(pois).where(eq(pois.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 }
 

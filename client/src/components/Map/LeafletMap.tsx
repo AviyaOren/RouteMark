@@ -5,17 +5,24 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import FilterPanel from "@/components/POI/FilterPanel";
+import { Plus, MapPin, User, LogOut } from "lucide-react";
 import SettingsPanel from "@/components/POI/SettingsPanel";
 import POIModal from "@/components/POI/POIModal";
-import type { Poi, PoiWithLocation } from "@/types/poi";
+import type { Poi } from "@/types/poi";
+import type { User as UserType } from "@shared/schema";
 
 // Import Leaflet dynamically to avoid SSR issues
 let L: any = null;
-if (typeof window !== "undefined") {
-  import("leaflet").then((leaflet) => {
+let leafletLoaded = false;
+
+const loadLeaflet = async () => {
+  if (leafletLoaded || typeof window === "undefined") return;
+  
+  try {
+    const leaflet = await import("leaflet");
     L = leaflet.default;
+    leafletLoaded = true;
+    
     // Fix for default markers
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
@@ -23,8 +30,10 @@ if (typeof window !== "undefined") {
       iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
       shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
     });
-  });
-}
+  } catch (error) {
+    console.error("Error loading Leaflet:", error);
+  }
+};
 
 export default function LeafletMap() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -36,13 +45,14 @@ export default function LeafletMap() {
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(
     new Set(["Restroom", "Water Fountain", "Food Stop", "Fuel Station", "Meeting Point"])
   );
+  const [leafletReady, setLeafletReady] = useState(false);
 
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch POIs
-  const { data: pois = [], isLoading } = useQuery({
+  const { data: pois = [], isLoading } = useQuery<Poi[]>({
     queryKey: ["/api/pois"],
     retry: false,
   });
@@ -63,7 +73,7 @@ export default function LeafletMap() {
       });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if (isUnauthorizedError(error as Error)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -98,7 +108,7 @@ export default function LeafletMap() {
       });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if (isUnauthorizedError(error as Error)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -130,7 +140,7 @@ export default function LeafletMap() {
       });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if (isUnauthorizedError(error as Error)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -149,9 +159,16 @@ export default function LeafletMap() {
     },
   });
 
+  // Load Leaflet
+  useEffect(() => {
+    loadLeaflet().then(() => {
+      setLeafletReady(true);
+    });
+  }, []);
+
   // Initialize map
   useEffect(() => {
-    if (!mapRef.current || !L || mapInstanceRef.current) return;
+    if (!mapRef.current || !L || !leafletReady || mapInstanceRef.current) return;
 
     const map = L.map(mapRef.current).setView([52.5200, 13.4050], 13);
     
@@ -161,7 +178,8 @@ export default function LeafletMap() {
 
     // Add click handler for adding POIs
     map.on("click", (e: any) => {
-      if (user?.role !== "Viewer") {
+      const currentUser = user as UserType;
+      if (currentUser && currentUser.role !== "Viewer") {
         setSelectedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
         setShowPOIModal(true);
       }
@@ -175,11 +193,11 @@ export default function LeafletMap() {
         mapInstanceRef.current = null;
       }
     };
-  }, [user?.role]);
+  }, [leafletReady, user]);
 
   // Update markers when POIs change
   useEffect(() => {
-    if (!mapInstanceRef.current || !L || !pois) return;
+    if (!mapInstanceRef.current || !L || !leafletReady || !pois) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => {
@@ -207,8 +225,9 @@ export default function LeafletMap() {
         weight: 2
       }).addTo(mapInstanceRef.current);
 
-      const canEdit = user?.role !== "Viewer" && 
-        (user?.role === "Admin" || poi.createdBy === user?.id);
+      const currentUser = user as UserType;
+      const canEdit = currentUser && currentUser.role !== "Viewer" && 
+        (currentUser.role === "Admin" || poi.createdBy === currentUser.id);
 
       const popupContent = `
         <div class="p-3 min-w-[200px]">
@@ -234,7 +253,7 @@ export default function LeafletMap() {
       marker.bindPopup(popupContent);
       markersRef.current.set(poi.id, marker);
     });
-  }, [pois, visibleCategories, user]);
+  }, [pois, visibleCategories, user, leafletReady]);
 
   // Global functions for popup buttons
   useEffect(() => {
@@ -278,7 +297,8 @@ export default function LeafletMap() {
   };
 
   const handleAddPOI = () => {
-    if (user?.role === "Viewer") {
+    const currentUser = user as UserType;
+    if (!currentUser || currentUser.role === "Viewer") {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to add POIs",
@@ -293,7 +313,24 @@ export default function LeafletMap() {
     });
   };
 
-  if (isLoading) {
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "Admin":
+        return "bg-primary text-white";
+      case "Editor":
+        return "bg-green-600 text-white";
+      case "Viewer":
+        return "bg-gray-600 text-white";
+      default:
+        return "bg-gray-600 text-white";
+    }
+  };
+
+  if (isLoading || !leafletReady) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -311,26 +348,78 @@ export default function LeafletMap() {
       <div className="w-full h-full relative">
         <div ref={mapRef} className="w-full h-full" />
         
+        {/* Top User Bar */}
+        <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-30 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">POI Management</h1>
+                <p className="text-xs text-gray-600">Click on the map to add POIs</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              {user && (() => {
+                const currentUser = user as UserType;
+                return (
+                  <>
+                    <span className={`px-2 py-1 text-xs rounded-md font-medium ${getRoleColor(currentUser.role)}`}>
+                      {currentUser.role}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      {currentUser.profileImageUrl ? (
+                        <img 
+                          src={currentUser.profileImageUrl} 
+                          alt="Profile" 
+                          className="w-7 h-7 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 bg-gray-300 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-gray-600" />
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-gray-700">
+                        {currentUser.firstName && currentUser.lastName ? 
+                          `${currentUser.firstName} ${currentUser.lastName}` : 
+                          currentUser.email || 'User'
+                        }
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleLogout}
+                        className="p-1.5 hover:bg-gray-100"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+
         {/* Floating Add POI Button */}
-        {user?.role !== "Viewer" && (
+        {user && (user as UserType).role !== "Viewer" && (
           <Button
             onClick={handleAddPOI}
-            className="fixed top-24 right-6 w-14 h-14 rounded-full shadow-lg hover:scale-105 transition-all duration-200 z-30 p-0"
+            className="fixed top-24 right-6 w-16 h-16 rounded-full shadow-lg hover:scale-105 transition-all duration-200 z-30 p-0 bg-primary hover:bg-primary/90"
             size="lg"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-8 h-8" />
           </Button>
         )}
 
-        {/* Filter Panel */}
-        <FilterPanel
-          pois={pois}
+        {/* Settings Panel */}
+        <SettingsPanel 
+          pois={pois} 
           visibleCategories={visibleCategories}
           onCategoryToggle={setVisibleCategories}
         />
-
-        {/* Settings Panel */}
-        <SettingsPanel pois={pois} />
 
         {/* POI Modal */}
         <POIModal

@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      if (error.message.includes("Insufficient permissions")) {
+      if (error instanceof Error && error.message.includes("Insufficient permissions")) {
         return res.status(403).json({ message: error.message });
       }
       console.error("Error updating POI:", error);
@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(204).send();
     } catch (error) {
-      if (error.message.includes("Insufficient permissions")) {
+      if (error instanceof Error && error.message.includes("Insufficient permissions")) {
         return res.status(403).json({ message: error.message });
       }
       console.error("Error deleting POI:", error);

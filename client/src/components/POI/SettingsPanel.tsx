@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Download, FolderSync, Eye } from "lucide-react";
+import { Settings, Download, FolderSync, Eye, Filter } from "lucide-react";
 import JsonPreviewModal from "./JsonPreviewModal";
 import type { Poi } from "@/types/poi";
 
 interface SettingsPanelProps {
   pois: Poi[];
+  visibleCategories: Set<string>;
+  onCategoryToggle: (categories: Set<string>) => void;
 }
 
-export default function SettingsPanel({ pois }: SettingsPanelProps) {
+export default function SettingsPanel({ pois, visibleCategories, onCategoryToggle }: SettingsPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showJsonPreview, setShowJsonPreview] = useState(false);
   const { toast } = useToast();
@@ -58,7 +61,7 @@ export default function SettingsPanel({ pois }: SettingsPanelProps) {
     if (pois.length === 0) return "Never";
     
     const latest = pois.reduce((latest, poi) => {
-      const poiDate = new Date(poi.updatedAt || poi.createdAt);
+      const poiDate = new Date(poi.updatedAt || poi.createdAt || 0);
       return poiDate > latest ? poiDate : latest;
     }, new Date(0));
     
@@ -76,6 +79,37 @@ export default function SettingsPanel({ pois }: SettingsPanelProps) {
     return `${days} days ago`;
   };
 
+  const categoryColors = {
+    "Restroom": "bg-blue-600",
+    "Water Fountain": "bg-sky-600", 
+    "Food Stop": "bg-green-600",
+    "Fuel Station": "bg-orange-600",
+    "Meeting Point": "bg-purple-600"
+  };
+
+  const categoryCounts = pois.reduce((acc, poi) => {
+    acc[poi.type] = (acc[poi.type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const handleCategoryToggle = (category: string, checked: boolean) => {
+    const newCategories = new Set(visibleCategories);
+    if (checked) {
+      newCategories.add(category);
+    } else {
+      newCategories.delete(category);
+    }
+    onCategoryToggle(newCategories);
+  };
+
+  const handleSelectAll = () => {
+    onCategoryToggle(new Set(Object.keys(categoryColors)));
+  };
+
+  const handleClearAll = () => {
+    onCategoryToggle(new Set());
+  };
+
   return (
     <>
       <div className="fixed bottom-6 right-6 z-30">
@@ -89,13 +123,55 @@ export default function SettingsPanel({ pois }: SettingsPanelProps) {
         </Button>
         
         {isOpen && (
-          <div className="absolute bottom-16 right-0 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-4 w-64">
+          <div className="absolute bottom-16 right-0 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-4 w-80 max-h-96 overflow-y-auto">
             <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
               <Settings className="w-4 h-4 mr-2 text-primary" />
-              Settings & Export
+              Settings & Filters
             </h3>
+
+            {/* Filter Section */}
+            <div className="mb-4">
+              <h4 className="font-medium text-gray-800 mb-2 flex items-center">
+                <Filter className="w-4 h-4 mr-2 text-primary" />
+                Filter POIs
+              </h4>
+              <div className="space-y-2">
+                {Object.entries(categoryColors).map(([category, colorClass]) => (
+                  <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                    <Checkbox
+                      checked={visibleCategories.has(category)}
+                      onCheckedChange={(checked) => handleCategoryToggle(category, !!checked)}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
+                    <span className="text-sm font-medium flex-1">{category}</span>
+                    <span className="text-xs text-gray-500">
+                      {categoryCounts[category] || 0}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2 flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="flex-1 text-xs"
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAll}
+                  className="flex-1 text-xs text-primary hover:text-blue-700"
+                >
+                  Clear All
+                </Button>
+              </div>
+            </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2 pt-2 border-t border-gray-200">
               <Button
                 onClick={handleExportJSON}
                 className="w-full justify-start bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
@@ -113,7 +189,7 @@ export default function SettingsPanel({ pois }: SettingsPanelProps) {
                 size="sm"
               >
                 <FolderSync className="w-4 h-4 mr-2" />
-                FolderSync to Cloud
+                Sync to Cloud
               </Button>
               
               <Button
@@ -127,7 +203,7 @@ export default function SettingsPanel({ pois }: SettingsPanelProps) {
               </Button>
             </div>
             
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-3 pt-3 border-t border-gray-200">
               <div className="text-xs text-gray-500 space-y-1">
                 <div className="flex justify-between">
                   <span>Total POIs:</span>

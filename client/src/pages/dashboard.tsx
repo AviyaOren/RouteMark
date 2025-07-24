@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import TopNavigation from "@/components/Layout/TopNavigation";
+
 import LeafletMap from "@/components/Map/LeafletMap";
 
 export default function Dashboard() {
@@ -37,7 +37,6 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen relative overflow-hidden">
-      <TopNavigation />
       <LeafletMap />
     </div>
   );
