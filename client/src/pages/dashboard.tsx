@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-import LeafletMap from "@/components/Map/LeafletMap";
+import SimpleMap from "@/components/Map/SimpleMap";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -37,7 +37,7 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen relative overflow-hidden">
-      <LeafletMap />
+      <SimpleMap />
     </div>
   );
 }
