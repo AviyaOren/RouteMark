@@ -170,11 +170,24 @@ export default function LeafletMap() {
   useEffect(() => {
     if (!mapRef.current || !L || !leafletReady || mapInstanceRef.current) return;
 
+    // Force height for the container
+    if (mapRef.current) {
+      mapRef.current.style.height = '100vh';
+      mapRef.current.style.width = '100vw';
+    }
+
     const map = L.map(mapRef.current).setView([52.5200, 13.4050], 13);
     
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+
+    // Force map to resize and invalidate size
+    setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 100);
 
     // Add click handler for adding POIs
     map.on("click", (e: any) => {
@@ -345,8 +358,18 @@ export default function LeafletMap() {
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
       />
       
-      <div className="w-full h-full relative">
-        <div ref={mapRef} className="w-full h-full" />
+      <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+        <div 
+          ref={mapRef} 
+          style={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 1
+          }}
+        />
         
         {/* Top User Bar */}
         <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-30 px-4 py-3">
