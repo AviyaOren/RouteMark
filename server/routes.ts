@@ -1,28 +1,24 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth } from "./auth";
 import { insertPoiSchema } from "@shared/schema";
 import { z } from "zod";
 
+// Simple authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  setupAuth(app);
 
   // POI routes
-  app.get('/api/pois', isAuthenticated, async (req: any, res) => {
+  app.get('/api/pois', async (req: any, res) => {
     try {
       const pois = await storage.getAllPois();
       res.json(pois);
@@ -32,9 +28,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/pois', isAuthenticated, async (req: any, res) => {
+  app.post('/api/pois', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user || user.role === "Viewer") {
@@ -53,9 +49,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/pois/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/pois/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const poiId = parseInt(req.params.id);
       
       if (isNaN(poiId)) {
@@ -82,9 +78,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/pois/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/pois/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const poiId = parseInt(req.params.id);
       
       if (isNaN(poiId)) {
@@ -108,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export POIs as JSON
-  app.get('/api/pois/export', isAuthenticated, async (req: any, res) => {
+  app.get('/api/pois/export', requireAuth, async (req: any, res) => {
     try {
       const pois = await storage.getAllPois();
       const exportData = pois.map(poi => ({

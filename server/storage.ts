@@ -2,7 +2,7 @@ import {
   users,
   pois,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type Poi,
   type InsertPoi,
 } from "@shared/schema";
@@ -12,38 +12,34 @@ import { eq, desc } from "drizzle-orm";
 // Interface for storage operations
 export interface IStorage {
   // User operations
-  // (IMPORTANT) these user operations are mandatory for Replit Auth.
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   
   // POI operations
   getAllPois(): Promise<Poi[]>;
   getPoi(id: number): Promise<Poi | undefined>;
-  createPoi(poi: InsertPoi, createdBy: string): Promise<Poi>;
-  updatePoi(id: number, poi: Partial<InsertPoi>, userId: string): Promise<Poi | undefined>;
-  deletePoi(id: number, userId: string): Promise<boolean>;
+  createPoi(poi: InsertPoi, createdBy: number): Promise<Poi>;
+  updatePoi(id: number, poi: Partial<InsertPoi>, userId: number): Promise<Poi | undefined>;
+  deletePoi(id: number, userId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  // (IMPORTANT) these user operations are mandatory for Replit Auth.
-
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return user;
   }
@@ -58,7 +54,7 @@ export class DatabaseStorage implements IStorage {
     return poi;
   }
 
-  async createPoi(poi: InsertPoi, createdBy: string): Promise<Poi> {
+  async createPoi(poi: InsertPoi, createdBy: number): Promise<Poi> {
     const [newPoi] = await db
       .insert(pois)
       .values({
@@ -69,7 +65,7 @@ export class DatabaseStorage implements IStorage {
     return newPoi;
   }
 
-  async updatePoi(id: number, poi: Partial<InsertPoi>, userId: string): Promise<Poi | undefined> {
+  async updatePoi(id: number, poi: Partial<InsertPoi>, userId: number): Promise<Poi | undefined> {
     // Check if user has permission to edit this POI
     const existingPoi = await this.getPoi(id);
     if (!existingPoi) return undefined;
@@ -92,7 +88,7 @@ export class DatabaseStorage implements IStorage {
     return updatedPoi;
   }
 
-  async deletePoi(id: number, userId: string): Promise<boolean> {
+  async deletePoi(id: number, userId: number): Promise<boolean> {
     // Check if user has permission to delete this POI
     const existingPoi = await this.getPoi(id);
     if (!existingPoi) return false;
