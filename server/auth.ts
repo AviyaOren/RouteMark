@@ -142,7 +142,7 @@ export function setupAuth(app: Express) {
       req.session.destroy((err: any) => {
         if (err) return next(err);
         res.clearCookie('connect.sid');
-        res.sendStatus(200);
+        res.redirect('/auth');
       });
     });
   };

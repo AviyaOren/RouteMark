@@ -68,11 +68,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      queryClient.clear(); // Clear all cached data
+      // Use window.location to trigger server redirect
+      window.location.href = "/api/logout";
     },
     onError: (error: Error) => {
       toast({
