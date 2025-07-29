@@ -43,6 +43,19 @@ export default function SimpleMap() {
     new Set(["Restroom", "Water Fountain", "Food Stop", "Fuel Station", "Meeting Point"])
   );
 
+  // Ensure visibleCategories is always a Set
+  const handleCategoryToggle = (categories: Set<string>) => {
+    try {
+      setVisibleCategories(new Set(categories));
+    } catch (error) {
+      console.error("Error updating visible categories:", error);
+      // Fallback to show all categories if there's an error
+      setVisibleCategories(new Set([
+        "Restroom", "Water Fountain", "Food Stop", "Fuel Station", "Meeting Point"
+      ]));
+    }
+  };
+
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -192,7 +205,7 @@ export default function SimpleMap() {
       zoom: 13,
       zoomControl: true
     });
-    
+
     window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
@@ -301,7 +314,7 @@ export default function SimpleMap() {
       });
       return;
     }
-    
+
     toast({
       title: "Select Location",
       description: "Click on the map to select a location for the new POI",
@@ -342,7 +355,7 @@ export default function SimpleMap() {
           backgroundColor: '#f0f0f0'
         }}
       />
-      
+
       {/* Top User Bar */}
       <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-30 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -355,7 +368,7 @@ export default function SimpleMap() {
               <p className="text-xs text-gray-600">Click on the map to add POIs</p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             {user && (() => {
               const currentUser = user as UserType;
@@ -425,7 +438,7 @@ export default function SimpleMap() {
       {showSettings && (
         <SettingsPanel 
           visibleCategories={visibleCategories}
-          setVisibleCategories={setVisibleCategories}
+          setVisibleCategories={handleCategoryToggle}
           pois={pois}
           onClose={() => setShowSettings(false)}
         />

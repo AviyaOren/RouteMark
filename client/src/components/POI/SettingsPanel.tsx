@@ -8,12 +8,13 @@ import JsonPreviewModal from "./JsonPreviewModal";
 import type { Poi } from "@/types/poi";
 
 interface SettingsPanelProps {
-  pois: Poi[];
   visibleCategories: Set<string>;
   onCategoryToggle: (categories: Set<string>) => void;
+  pois: Poi[];
+  onClose: () => void;
 }
 
-export default function SettingsPanel({ pois, visibleCategories, onCategoryToggle }: SettingsPanelProps) {
+export default function SettingsPanel({ visibleCategories, onCategoryToggle, pois, onClose }: SettingsPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showJsonPreview, setShowJsonPreview] = useState(false);
   const { toast } = useToast();
@@ -36,11 +37,11 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
       const response = await fetch("/api/pois/export", {
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to export POIs");
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -50,7 +51,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast({
         title: "Success",
         description: "POIs exported successfully",
@@ -73,22 +74,22 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
 
   const formatLastUpdated = () => {
     if (pois.length === 0) return "Never";
-    
+
     const latest = pois.reduce((latest, poi) => {
       const poiDate = new Date(poi.updatedAt || poi.createdAt || 0);
       return poiDate > latest ? poiDate : latest;
     }, new Date(0));
-    
+
     const now = new Date();
     const diff = now.getTime() - latest.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
-    
+
     if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes} mins ago`;
-    
+
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours} hours ago`;
-    
+
     const days = Math.floor(hours / 24);
     return `${days} days ago`;
   };
@@ -135,7 +136,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
         >
           <Settings className="w-5 h-5 text-gray-600" />
         </Button>
-        
+
         {isOpen && (
           <div className="absolute bottom-16 right-0 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-4 w-80 max-h-96 overflow-y-auto">
             <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
@@ -184,7 +185,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-2 pt-2 border-t border-gray-200">
               <Button
                 onClick={handleExportJSON}
@@ -195,7 +196,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
                 <Download className="w-4 h-4 mr-2" />
                 Export POIs (JSON)
               </Button>
-              
+
               <Button
                 onClick={handleSyncToCloud}
                 className="w-full justify-start bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
@@ -205,7 +206,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
                 <FolderSync className="w-4 h-4 mr-2" />
                 Sync to Cloud
               </Button>
-              
+
               <Button
                 onClick={() => setShowJsonPreview(true)}
                 className="w-full justify-start bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
@@ -216,7 +217,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
                 Preview JSON
               </Button>
             </div>
-            
+
             {/* User Section */}
             <div className="mt-3 pt-3 border-t border-gray-200">
               <div className="flex items-center justify-between mb-3">
@@ -242,7 +243,7 @@ export default function SettingsPanel({ pois, visibleCategories, onCategoryToggl
                 </Button>
               </div>
             </div>
-            
+
             <div className="pt-2 border-t border-gray-200">
               <div className="text-xs text-gray-500 space-y-1">
                 <div className="flex justify-between">
