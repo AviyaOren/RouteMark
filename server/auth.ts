@@ -102,8 +102,26 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json({ ...req.user, password: undefined });
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        console.error("Login error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+      
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Session login error:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        
+        res.status(200).json({ ...user, password: undefined });
+      });
+    })(req, res, next);
   });
 
   const handleLogout = (req: any, res: any, next: any) => {
