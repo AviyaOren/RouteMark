@@ -438,7 +438,7 @@ export default function SimpleMap() {
       {showSettings && (
         <SettingsPanel 
           visibleCategories={visibleCategories}
-          setVisibleCategories={handleCategoryToggle}
+          onCategoryToggle={handleCategoryToggle}
           pois={pois}
           onClose={() => setShowSettings(false)}
         />
