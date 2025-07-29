@@ -36,10 +36,10 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "your-secret-key-here",
     resave: false,
     saveUninitialized: false,
-    store: new PostgresSessionStore({
+    store: process.env.DATABASE_URL ? new PostgresSessionStore({
       conString: process.env.DATABASE_URL,
-      createTableIfMissing: false, // Don't try to create tables
-    }),
+      createTableIfMissing: true, // Allow table creation for sessions
+    }) : undefined,
     cookie: {
       secure: false, // Set to true in production with HTTPS
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -70,9 +70,13 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
-      done(error);
+      console.error("User deserialization error:", error);
+      done(null, false);
     }
   });
 
